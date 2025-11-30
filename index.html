@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Document Vault</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- GENERAL & LAYOUT --- */
+        :root {
+            --primary-color: #1c2e4a;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e8ecf4 0%, #f1f5f9 100%);
+            color: var(--text-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0.5;
+            }
+            50% {
+                transform: translateY(-100px) translateX(100px) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(0) translateX(0) rotate(360deg);
+                opacity: 0.5;
+            }
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #2c3e50 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" opacity="0.05"><path fill="white" d="M50 0L100 50L50 100L0 50Z"/></svg>');
+            background-size: 80px;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header-icon {
+            font-size: 2.2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .header-subtitle {
+            font-size: 1rem;
+            font-weight: 300;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        #live-clock {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 1s ease-out 0.5s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Content wrapper */
+        #content-wrapper {
+            display: none;
+            padding: 30px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Dashboard cards */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--secondary-color), var(--accent-color));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+
+        .dashboard-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--secondary-color);
+            transition: var(--transition);
+        }
+
+        .dashboard-card:hover .card-icon {
+            transform: scale(1.2) rotate(5deg);
+            color: var(--accent-color);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            transition: var(--transition);
+        }
+
+        .dashboard-card:hover .card-value {
+            transform: scale(1.1);
+        }
+
+        /* Search sections */
+        .search-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.8s ease-out 0.3s both;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--secondary-color);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            transition: var(--transition);
+            background: var(--light-bg);
+        }
+
+        .search-box input:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            transform: scale(1.02);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            transition: var(--transition);
+        }
+
+        .search-box input:focus + .search-icon {
+            color: var(--secondary-color);
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        /* Document categories */
+        .document-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .category-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            animation: fadeInUp 0.8s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .category-card:nth-child(1) { animation-delay: 0.1s; }
+        .category-card:nth-child(2) { animation-delay: 0.2s; }
+        .category-card:nth-child(3) { animation-delay: 0.3s; }
+        .category-card:nth-child(4) { animation-delay: 0.4s; }
+        .category-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .category-card:hover {
+            transform: translateY(-10px) rotate(1deg);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #2c3e50 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-header::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .category-card:hover .category-header::after {
+            left: 100%;
+        }
+
+        .category-items {
+            padding: 20px;
+        }
+
+        .document-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--light-bg);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .document-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .document-item:hover::before {
+            left: 100%;
+        }
+
+        .document-item:hover {
+            background: #e8f4fd;
+            border-left-color: var(--secondary-color);
+            transform: translateX(10px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .document-name {
+            font-weight: 500;
+            color: var(--text-dark);
+            transition: var(--transition);
+        }
+
+        .document-item:hover .document-name {
+            color: var(--secondary-color);
+        }
+
+        .document-year {
+            background: var(--secondary-color);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .document-item:hover .document-year {
+            background: var(--accent-color);
+            transform: scale(1.1);
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 80%;
+            margin-top: 2%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: zoomIn 0.3s ease-out;
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 1001;
+        }
+
+        .close:hover {
+            color: var(--accent-color);
+            transform: rotate(90deg) scale(1.2);
+        }
+
+        .document-title {
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .loading, .error-message {
+            color: white;
+            text-align: center;
+            margin-top: 20%;
+            font-size: 1.2rem;
+        }
+
+        /* Loading animation */
+        .loading::after {
+            content: "";
+            animation: loadingDots 1.5s infinite;
+        }
+
+        @keyframes loadingDots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            #live-clock {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-top: 15px;
+                display: inline-block;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .document-categories {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<header>
+    <div class="header-content">
+        <h1><i class="fas fa-shield-alt header-icon"></i> Confidential Document Vault</h1>
+        <p class="header-subtitle">Secure storage for your important documents with multi-layer authentication</p>
+        <div id="live-clock"></div>
+    </div>
+</header>
+
+<div id="content-wrapper">
+    <div class="dashboard">
+        <div class="dashboard-card">
+            <i class="fas fa-file-alt card-icon"></i>
+            <div class="card-title">Total Documents</div>
+            <div class="card-value">5</div>
+        </div>
+        <div class="dashboard-card">
+            <i class="fas fa-calendar-alt card-icon"></i>
+            <div class="card-title">Latest Year</div>
+            <div class="card-value">2025</div>
+        </div>
+        <div class="dashboard-card">
+            <i class="fas fa-lock card-icon"></i>
+            <div class="card-title">Security Level</div>
+            <div class="card-value">High</div>
+        </div>
+    </div>
+
+    <div class="search-section">
+        <h2 class="section-title"><i class="fas fa-search"></i> Search Documents</h2>
+        
+        <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Search by document name...">
+        </div>
+        
+        <div class="search-box">
+            <i class="fas fa-calendar search-icon"></i>
+            <input type="text" id="dateSearchInput" placeholder="Search by year (e.g., 2025, 2078)...">
+        </div>
+    </div>
+
+    <div class="document-categories">
+        <div class="category-card">
+            <div class="category-header">SYMBOL NUMBER 2025</div>
+            <div class="category-items">
+                <div class="document-item" data-image="https://i.supaimg.com/51f02740-4eb1-48ce-a04f-0b1d7406ee6e.jpg" data-title="Symbol Number" data-year="2025">
+                    <span class="document-name">Symbol Number</span>
+                    <span class="document-year">2025</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">SEE CERTIFICATE 2025</div>
+            <div class="category-items">
+                <div class="document-item" data-image="https://i.supaimg.com/4815dd23-d663-4a67-a4e3-7646bb5c5da3.jpg" data-title="SEE Certificate" data-year="2025">
+                    <span class="document-name">SEE Certificate</span>
+                    <span class="document-year">2025</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">SEE MARK SHEET 2025</div>
+            <div class="category-items">
+                <div class="document-item" data-image="https://i.supaimg.com/1feee77a-8638-49ba-90c5-fd0379980f03.jpg" data-title="SEE Marksheet" data-year="2025">
+                    <span class="document-name">SEE Marksheet</span>
+                    <span class="document-year">2025</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">DATE OF BIRTH CERTIFICATE 2072</div>
+            <div class="category-items">
+                <div class="document-item" data-image="https://i.supaimg.com/78a790f2-c351-442b-afad-4017d95f672e.jpg" data-title="Date of Birth Certificate" data-year="2072">
+                    <span class="document-name">Date of Birth Certificate</span>
+                    <span class="document-year">2072</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">GRADE 8 CERTIFICATE 2078</div>
+            <div class="category-items">
+                <div class="document-item" data-image="https://i.supaimg.com/e4dc42d9-bdc6-49db-bf3b-d70f202608fe.jpg" data-title="Grade 8 Certificate" data-year="2078">
+                    <span class="document-name">Grade 8 Certificate</span>
+                    <span class="document-year">2078</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="imageModal" class="modal">
+    <span class="close">&times;</span>
+    <div class="document-title" id="modalTitle"></div>
+    <div class="loading" id="loadingIndicator">Loading document</div>
+    <div class="error-message" id="errorMessage" style="display: none;"></div>
+    <img class="modal-content" id="modalImage">
+</div>
+
+<script>
+    // --- SECURITY CONSTANTS ---
+    const FIRST_PASSWORD = "9762596912";
+    const SECOND_PASSWORD = "Kiran976259";
+
+    // --- CREATE ANIMATED PARTICLES ---
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 15;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random size and position
+            const size = Math.random() * 60 + 20;
+            const posX = Math.random() * 100;
+            const posY = Math.random() * 100;
+            const delay = Math.random() * 15;
+            
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${posX}%`;
+            particle.style.top = `${posY}%`;
+            particle.style.animationDelay = `${delay}s`;
+            
+            particlesContainer.appendChild(particle);
+        }
+    }
+
+    // --- FUNCTION TO UPDATE LIVE CLOCK ---
+    function updateClock() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit'
+        };
+        const timeString = now.toLocaleDateString('en-US', options);
+        document.getElementById('live-clock').textContent = timeString;
+    }
+
+    // --- FUNCTION TO HANDLE FIRST PASSWORD CHECK (ON LOAD) ---
+    function checkFirstPassword() {
+        let enteredFirstPassword = prompt("SECURITY CHECK: Enter first password for website access:");
+
+        if (enteredFirstPassword === null || enteredFirstPassword !== FIRST_PASSWORD) {
+            alert("INCORRECT PASSWORD! Access denied.");
+            document.body.innerHTML = `
+                <div style="
+                    display: flex; 
+                    flex-direction: column; 
+                    align-items: center; 
+                    justify-content: center; 
+                    height: 100vh; 
+                    background: linear-gradient(135deg, #1c2e4a 0%, #2c3e50 100%); 
+                    color: white; 
+                    text-align: center;
+                    padding: 20px;
+                ">
+                    <i class="fas fa-ban" style="font-size: 4rem; margin-bottom: 20px;"></i>
+                    <h1 style="font-size: 2.5rem; margin-bottom: 15px;">ACCESS DENIED</h1>
+                    <p style="font-size: 1.2rem; max-width: 500px;">
+                        Unauthorized access attempt detected. Please contact the administrator if you believe this is an error.
+                    </p>
+                </div>
+            `;
+            return false;
+        }
+
+        document.getElementById('content-wrapper').style.display = 'block';
+        return true;
+    }
+
+    // --- INITIALIZE ON PAGE LOAD ---
+    document.addEventListener('DOMContentLoaded', (event) => {
+        createParticles();
+        updateClock(); 
+        setInterval(updateClock, 1000); 
+
+        // Execute the first password check
+        checkFirstPassword();
+    });
+    
+    // --- SEARCH FUNCTIONALITY ---
+    function filterDocuments(filterText, isYearSearch = false) {
+        const filter = filterText.toLowerCase().trim();
+        const documentItems = document.querySelectorAll('.document-item');
+        const categoryCards = document.querySelectorAll('.category-card');
+
+        if (filter === "") {
+            // Show all if search box is empty
+            categoryCards.forEach(card => card.style.display = "block");
+            documentItems.forEach(item => item.style.display = "flex");
+            return;
+        }
+
+        // Hide all categories initially
+        categoryCards.forEach(card => card.style.display = "none");
+        
+        // Show matching items and their categories
+        documentItems.forEach(item => {
+            const documentName = item.querySelector('.document-name').innerText.toLowerCase();
+            const documentYear = item.getAttribute('data-year');
+            let match = false;
+
+            if (isYearSearch) {
+                // Year search logic
+                if (documentYear.includes(filter)) {
+                    match = true;
+                }
+            } else {
+                // Name search logic
+                if (documentName.includes(filter)) {
+                    match = true;
+                }
+            }
+            
+            if (match) {
+                item.style.display = "flex";
+                // Show the category card of this item
+                const categoryCard = item.closest('.category-card');
+                if (categoryCard) {
+                    categoryCard.style.display = "block";
+                }
+            } else {
+                item.style.display = "none";
+            }
+        });
+    }
+
+    // Document Name Search Event
+    document.getElementById("searchInput").addEventListener("keyup", function(){
+        filterDocuments(this.value, false);
+        document.getElementById("dateSearchInput").value = ""; // Clear other search box
+    });
+
+    // Date/Year Search Event
+    document.getElementById("dateSearchInput").addEventListener("keyup", function(){
+        filterDocuments(this.value, true);
+        document.getElementById("searchInput").value = ""; // Clear other search box
+    });
+
+    // --- MODAL LOGIC ---
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    const modalTitle = document.getElementById("modalTitle");
+    const loadingIndicator = document.getElementById("loadingIndicator");
+    const closeBtn = document.getElementsByClassName("close")[0];
+
+    document.querySelectorAll('.document-item').forEach(item => {
+        item.addEventListener('click', function() {
+            // 1. Second Password Prompt and Check
+            const enteredSecondPassword = prompt("DOCUMENT ACCESS: Enter second document password:");
+
+            if (enteredSecondPassword === null || enteredSecondPassword !== SECOND_PASSWORD) {
+                alert("INCORRECT PASSWORD! Document access denied.");
+                return; 
+            }
+            
+            // 2. If password is correct, proceed to open modal
+            const imageUrl = this.getAttribute('data-image');
+            const title = this.getAttribute('data-title');
+            
+            modal.style.display = "block";
+            modalImg.style.display = "none";
+            loadingIndicator.style.display = "block";
+            modalTitle.textContent = title;
+            
+            const testImage = new Image();
+            testImage.onload = function() {
+                loadingIndicator.style.display = "none";
+                modalImg.style.display = "block";
+                modalImg.src = imageUrl;
+            };
+            testImage.onerror = function() {
+                loadingIndicator.style.display = "none";
+                alert("Error loading document: " + title);
+                modal.style.display = "none";
+            };
+            
+            testImage.src = imageUrl;
+        });
+    });
+
+    // Close modal handlers
+    closeBtn.onclick = function() { 
+        modal.style.display = "none"; 
+        modalImg.src = "";
+    };
+    
+    window.onclick = function(event) {
+        if (event.target == modal) { 
+            modal.style.display = "none"; 
+            modalImg.src = "";
+        }
+    };
+</script>
+
+</body>
+</html>
