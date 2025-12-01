@@ -522,6 +522,73 @@
             60%, 100% { content: "..."; }
         }
 
+        /* Police siren animation */
+        .police-alert {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(231, 76, 60, 0.8) 0%, rgba(52, 152, 219, 0.8) 50%, rgba(231, 76, 60, 0.8) 100%);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            animation: sirenFlash 0.5s infinite alternate;
+        }
+
+        @keyframes sirenFlash {
+            0% {
+                background: linear-gradient(90deg, rgba(231, 76, 60, 0.9) 0%, rgba(52, 152, 219, 0.9) 50%, rgba(231, 76, 60, 0.9) 100%);
+            }
+            100% {
+                background: linear-gradient(90deg, rgba(52, 152, 219, 0.9) 0%, rgba(231, 76, 60, 0.9) 50%, rgba(52, 152, 219, 0.9) 100%);
+            }
+        }
+
+        .alert-content {
+            text-align: center;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            animation: pulse 1s infinite;
+        }
+
+        .alert-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .alert-content p {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+        }
+
+        .alert-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .alert-btn:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             h1 {
@@ -542,6 +609,15 @@
             
             .document-categories {
                 grid-template-columns: 1fr;
+            }
+            
+            .alert-content {
+                padding: 20px;
+                margin: 20px;
+            }
+            
+            .alert-content h2 {
+                font-size: 1.8rem;
             }
         }
     </style>
@@ -652,6 +728,15 @@
     <img class="modal-content" id="modalImage">
 </div>
 
+<!-- Police Alert Screen -->
+<div id="policeAlert" class="police-alert">
+    <div class="alert-content">
+        <h2><i class="fas fa-exclamation-triangle"></i> SECURITY BREACH DETECTED</h2>
+        <p>Unauthorized access attempt has been logged and authorities have been notified.</p>
+        <button class="alert-btn" id="dismissAlert">Dismiss Alert</button>
+    </div>
+</div>
+
 <script>
     // --- SECURITY CONSTANTS ---
     const FIRST_PASSWORD = "9762596912";
@@ -698,12 +783,47 @@
         document.getElementById('live-clock').textContent = timeString;
     }
 
+    // --- FUNCTION TO PLAY POLICE SIREN ---
+    function playPoliceSiren() {
+        // Create audio context for generating siren sound
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        
+        // Create oscillator for siren sound
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        // Configure siren sound
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1600, audioCtx.currentTime + 0.5);
+        
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        
+        // Start and stop siren
+        oscillator.start();
+        
+        // Show police alert screen
+        document.getElementById('policeAlert').style.display = 'flex';
+        
+        // Stop siren after 5 seconds
+        setTimeout(() => {
+            oscillator.stop();
+            // Optionally, you can also hide the alert after sound stops
+            // document.getElementById('policeAlert').style.display = 'none';
+        }, 5000);
+    }
+
     // --- FUNCTION TO HANDLE FIRST PASSWORD CHECK (ON LOAD) ---
     function checkFirstPassword() {
         let enteredFirstPassword = prompt("SECURITY CHECK: Enter first password for website access:");
 
         if (enteredFirstPassword === null || enteredFirstPassword !== FIRST_PASSWORD) {
             alert("INCORRECT PASSWORD! Access denied.");
+            playPoliceSiren();
             document.body.innerHTML = `
                 <div style="
                     display: flex; 
@@ -738,6 +858,11 @@
 
         // Execute the first password check
         checkFirstPassword();
+        
+        // Add event listener for dismissing the police alert
+        document.getElementById('dismissAlert').addEventListener('click', function() {
+            document.getElementById('policeAlert').style.display = 'none';
+        });
     });
     
     // --- SEARCH FUNCTIONALITY ---
@@ -813,6 +938,7 @@
 
             if (enteredSecondPassword === null || enteredSecondPassword !== SECOND_PASSWORD) {
                 alert("INCORRECT PASSWORD! Document access denied.");
+                playPoliceSiren();
                 return; 
             }
             
